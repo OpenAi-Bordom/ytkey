@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d0d12" />
+  <title>ytkey — BPM & key finder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="grain"></div>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="ytkey home"><span class="brand-mark">⌁</span>ytkey</a>
+    <span class="header-note">audio intelligence, locally</span>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="eyebrow"><span class="pulse"></span> free browser tool · no upload</div>
+      <h1>Find the <em>pulse</em><br>of any track.</h1>
+      <p class="hero-copy">Paste a YouTube link or drop in an audio file. Get an estimated BPM and musical key in seconds.</p>
+    </section>
+
+    <section class="workbench" aria-label="Track analyzer">
+      <div class="input-card">
+        <label for="urlInput">YouTube URL</label>
+        <div class="url-row">
+          <span class="url-icon">↗</span>
+          <input id="urlInput" type="url" placeholder="https://youtube.com/watch?v=..." autocomplete="off" />
+          <button id="analyzeUrl" class="primary">Analyze URL <span>→</span></button>
+        </div>
+        <div id="urlMessage" class="input-message" role="status">Your audio stays in your browser.</div>
+      </div>
+
+      <div class="or"><span>or</span></div>
+
+      <label class="dropzone" id="dropzone" for="fileInput">
+        <input id="fileInput" type="file" accept="audio/*,.webm,.wav,.mp3,.m4a,.ogg,.flac" />
+        <span class="upload-icon">↑</span>
+        <span class="drop-title">Drop an audio file here</span>
+        <span class="drop-sub">MP3, WAV, M4A, OGG, FLAC or WEBM · max 90 sec analyzed</span>
+        <span class="browse">Browse files</span>
+      </label>
+
+      <div id="progressPanel" class="progress-panel" hidden>
+        <div class="progress-top"><span id="progressLabel">Reading your track…</span><span id="progressPercent">0%</span></div>
+        <div class="progress-track"><div id="progressBar"></div></div>
+      </div>
+
+      <div id="results" class="results" hidden>
+        <div class="result-heading"><div><span class="eyebrow">ANALYSIS COMPLETE</span><h2 id="trackName">Your track</h2></div><button id="reset" class="text-button">Analyze another ↗</button></div>
+        <div class="result-grid">
+          <article class="metric metric-bpm"><span class="metric-label">TEMPO</span><strong id="bpmValue">—</strong><span class="metric-unit">BPM</span><div class="meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></article>
+          <article class="metric metric-key"><span class="metric-label">KEY</span><strong id="keyValue">—</strong><span class="metric-unit" id="scaleValue">estimated</span><div class="key-wheel"><span>♩</span></div></article>
+        </div>
+        <p class="confidence" id="confidence">Analysis is an estimate based on the first 60 seconds of audio.</p>
+      </div>
+    </section>
+
+    <section class="how-it-works">
+      <div><span class="eyebrow">BUILT FOR QUICK CHECKS</span><h2>One link in.<br>Two useful numbers out.</h2></div>
+      <div class="steps"><div class="step"><span>01</span><p><b>Bring your audio</b><br>Use a file exported from your editor or music library.</p></div><div class="step"><span>02</span><p><b>Let the waveform speak</b><br>A lightweight signal analysis estimates tempo and pitch center.</p></div><div class="step"><span>03</span><p><b>Make your next move</b><br>Match samples, set a grid, or find a compatible key.</p></div></div>
+    </section>
+  </main>
+  <footer><span>ytkey / 2026</span><span>made for producers, DJs & curious ears</span></footer>
+  <script src="app.js"></script>
+</body>
+</html>
