@@ -21,7 +21,7 @@
     <section class="hero">
       <div class="eyebrow"><span class="pulse"></span> free browser tool · no upload</div>
       <h1>Find the <em>pulse</em><br>of any track.</h1>
-      <p class="hero-copy">Paste a YouTube link or drop in an audio file. Get an estimated BPM and musical key in seconds.</p>
+      <p class="hero-copy">Paste a YouTube link and get an estimated BPM and musical key in seconds. Audio stays on the server and never becomes a download.</p>
     </section>
 
     <section class="workbench" aria-label="Track analyzer">
@@ -32,22 +32,7 @@
           <input id="urlInput" type="url" placeholder="https://youtube.com/watch?v=..." autocomplete="off" />
           <button id="analyzeUrl" class="primary">Analyze URL <span>→</span></button>
         </div>
-        <div id="urlMessage" class="input-message" role="status">Your audio stays in your browser.</div>
-      </div>
-
-      <div class="or"><span>or</span></div>
-
-      <label class="dropzone" id="dropzone" for="fileInput">
-        <input id="fileInput" type="file" accept="audio/*,.webm,.wav,.mp3,.m4a,.ogg,.flac" />
-        <span class="upload-icon">↑</span>
-        <span class="drop-title">Drop an audio file here</span>
-        <span class="drop-sub">MP3, WAV, M4A, OGG, FLAC or WEBM · max 90 sec analyzed</span>
-        <span class="browse">Browse files</span>
-      </label>
-
-      <div id="progressPanel" class="progress-panel" hidden>
-        <div class="progress-top"><span id="progressLabel">Reading your track…</span><span id="progressPercent">0%</span></div>
-        <div class="progress-track"><div id="progressBar"></div></div>
+        <div id="urlMessage" class="input-message" role="status">Only BPM and key results are returned to your browser.</div>
       </div>
 
       <div id="results" class="results" hidden>
@@ -62,7 +47,7 @@
 
     <section class="how-it-works">
       <div><span class="eyebrow">BUILT FOR QUICK CHECKS</span><h2>One link in.<br>Two useful numbers out.</h2></div>
-      <div class="steps"><div class="step"><span>01</span><p><b>Bring your audio</b><br>Use a file exported from your editor or music library.</p></div><div class="step"><span>02</span><p><b>Let the waveform speak</b><br>A lightweight signal analysis estimates tempo and pitch center.</p></div><div class="step"><span>03</span><p><b>Make your next move</b><br>Match samples, set a grid, or find a compatible key.</p></div></div>
+      <div class="steps"><div class="step"><span>01</span><p><b>Paste a public YouTube link</b><br>Use a video that is publicly playable.</p></div><div class="step"><span>02</span><p><b>Let the waveform speak</b><br>The server analyzes a short audio sample privately.</p></div><div class="step"><span>03</span><p><b>Make your next move</b><br>Match samples, set a grid, or find a compatible key.</p></div></div>
     </section>
   </main>
   <footer><span>ytkey / 2026</span><span>made for producers, DJs & curious ears</span></footer>

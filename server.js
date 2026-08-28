@@ -24,7 +24,7 @@ function json(res, status, body) {
 function runAnalysis(id) {
   return new Promise((resolve, reject) => {
     // Audio is streamed through two short-lived processes and held only in RAM.
-    const downloader = spawn('yt-dlp', ['--no-playlist', '--no-warnings', '-f', 'bestaudio/best', '-o', '-', `https://www.youtube.com/watch?v=${id}`], {stdio: ['ignore', 'pipe', 'pipe']});
+    const downloader = spawn('yt-dlp', ['--no-playlist', '--no-warnings', '--js-runtimes', 'node', '-f', 'bestaudio/best', '-o', '-', `https://www.youtube.com/watch?v=${id}`], {stdio: ['ignore', 'pipe', 'pipe']});
     const decoder = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-t', '60', '-vn', '-ac', '1', '-ar', '22050', '-f', 'f32le', 'pipe:1'], {stdio: ['pipe', 'pipe', 'pipe']});
     let chunks = [], total = 0, errors = '';
     downloader.stdout.pipe(decoder.stdin);
@@ -69,7 +69,7 @@ function serveFile(req, res) {
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/analyze') {
     let body = ''; req.on('data', chunk => { body += chunk; if (body.length > MAX_BODY) req.destroy(); });
-    req.on('end', async () => { try { const id = youtubeId(JSON.parse(body).url || ''); if (!id) return json(res, 400, {error:'Please provide a valid YouTube URL.'}); const result = await runAnalysis(id); return json(res, 200, result); } catch (error) { return json(res, 502, {error:'Could not read that video’s audio. It may be private, age-restricted, unavailable, or blocked by yt-dlp.'}); } }); return;
+    req.on('end', async () => { try { const id = youtubeId(JSON.parse(body).url || ''); if (!id) return json(res, 400, {error:'Please provide a valid YouTube URL.'}); const result = await runAnalysis(id); return json(res, 200, result); } catch (error) { console.error(`[analyze] ${error.message}`); return json(res, 502, {error:'Could not read that video’s audio. Check that it is public and playable, then try again.'}); } }); return;
   }
   if (req.method === 'GET' || req.method === 'HEAD') return serveFile(req, res);
   json(res, 405, {error:'Method not allowed'});
