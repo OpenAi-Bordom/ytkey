@@ -3,5 +3,5 @@ services:
     name: ytkey
     runtime: docker
     plan: free
-    healthCheckPath: /
+    healthCheckPath: /api/health
     autoDeploy: true

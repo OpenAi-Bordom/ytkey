@@ -1,17 +1,15 @@
 # ytkey
 
-URL-only BPM and musical-key estimation with a static frontend and Node backend.
+YouTube URL-to-BPM/key analyzer, with a static frontend and Render-ready backend.
 
-## Local
+## Deploy on Render
 
-```bash
-node server.js
-```
+Push this folder to GitHub, then create a Render **Blueprint** from the repository. Render uses `render.yaml` and the included Dockerfile.
 
-Open <http://localhost:8787>. The backend needs `yt-dlp` and `ffmpeg` on your PATH.
+Check a deployment at `https://YOUR-SERVICE.onrender.com/api/health`. It should return `build: "2026.08.27-cookie-support"` and report `ytDlp` as a version number.
 
-## Render
+## Required for YouTube bot checks
 
-Push this folder to GitHub, then create a Render **Blueprint** from the repository. Render will use `render.yaml` and build the Docker image. If creating the service manually, choose **Web Service → Docker** and leave the Dockerfile path as `./Dockerfile`.
+YouTube may reject cloud-server traffic with “Sign in to confirm you’re not a bot.” For your own authorized account, export a Netscape-format `cookies.txt`, Base64-encode it locally, and add the resulting value in Render as the secret environment variable `YOUTUBE_COOKIES_B64`—never commit or paste the cookie value into the repository or chat.
 
-The Docker image installs Node 22, Deno, `yt-dlp[default]`, and ffmpeg. It processes up to 60 seconds of audio in memory and returns only BPM/key JSON; it does not expose an audio download endpoint. Use only videos/audio you are authorized to process and follow YouTube’s terms and applicable law.
+Use a separate low-privilege Google account for this purpose and keep the Render service private/rate-limited: a public service sharing your authenticated cookies can abuse that account. Cookies can expire and need replacing. Use only videos you are authorized to process and follow YouTube’s terms and applicable law.
