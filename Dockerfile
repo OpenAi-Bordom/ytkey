@@ -1,7 +1,8 @@
 FROM node:22-bookworm-slim
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ffmpeg python3 python3-venv ca-certificates \
+  && apt-get install -y --no-install-recommends ffmpeg python3 python3-venv ca-certificates curl unzip \
+  && curl -fsSL https://deno.land/install.sh | sh \
   && python3 -m venv /opt/yt-dlp \
   && /opt/yt-dlp/bin/pip install --no-cache-dir "yt-dlp[default]" \
   && ln -s /opt/yt-dlp/bin/yt-dlp /usr/local/bin/yt-dlp \
@@ -12,5 +13,6 @@ WORKDIR /app
 COPY index.html styles.css app.js server.js ./
 
 ENV NODE_ENV=production
+ENV PATH="/root/.deno/bin:${PATH}"
 EXPOSE 10000
 CMD ["node", "server.js"]

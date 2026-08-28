@@ -20,7 +20,7 @@ The server-side route is intended only for videos/audio you are authorized to pr
 
 ## Deploy on Render
 
-This repo includes a `Dockerfile` and `render.yaml`. In Render, create a new Blueprint and point it at this repository; Render will detect `render.yaml` and build the Docker image. The image installs `ffmpeg`, Node 22, and `yt-dlp[default]` (including its current YouTube challenge solver), and Render provides the `PORT` environment variable automatically.
+This repo includes a `Dockerfile` and `render.yaml`. In Render, create a new Blueprint and point it at this repository; Render will detect `render.yaml` and build the Docker image. The image installs `ffmpeg`, Deno, Node 22, and `yt-dlp[default]` (including its current YouTube challenge solver), and Render provides the `PORT` environment variable automatically.
 
 If creating the service manually, choose **Web Service → Docker**, leave the Dockerfile path as `./Dockerfile`, and do not add a separate build or start command. The site and API must be served by `node server.js`, not a static-site service.
 

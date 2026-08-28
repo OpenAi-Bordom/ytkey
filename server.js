@@ -6,12 +6,17 @@ const fs = require('node:fs');
 const PORT = Number(process.env.PORT || 8787);
 const ROOT = __dirname;
 const MAX_BODY = 16 * 1024;
+const MAX_CONCURRENT_JOBS = 2;
+const RATE_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT = 8;
+let activeJobs = 0;
+const recentRequests = new Map();
 
 function youtubeId(value) {
   try {
     const url = new URL(value.trim());
-    if (url.hostname === 'youtu.be' || url.hostname.endsWith('.youtu.be')) return url.pathname.slice(1).split('/')[0];
-    if (url.hostname === 'youtube.com' || url.hostname.endsWith('.youtube.com')) return url.searchParams.get('v') || url.pathname.match(/(?:shorts|embed|live)\/([^/?]+)/)?.[1];
+    if (url.hostname === 'youtu.be' || url.hostname.endsWith('.youtu.be')) return url.pathname.slice(1).split('/')[0].match(/^[A-Za-z0-9_-]{6,}$/)?.[0] || null;
+    if (url.hostname === 'youtube.com' || url.hostname.endsWith('.youtube.com')) { const id = url.searchParams.get('v') || url.pathname.match(/(?:shorts|embed|live)\/([^/?]+)/)?.[1]; return id?.match(/^[A-Za-z0-9_-]{6,}$/)?.[0] || null; }
   } catch (_) {}
   return null;
 }
@@ -24,19 +29,21 @@ function json(res, status, body) {
 function runAnalysis(id) {
   return new Promise((resolve, reject) => {
     // Audio is streamed through two short-lived processes and held only in RAM.
-    const downloader = spawn('yt-dlp', ['--no-playlist', '--no-warnings', '--js-runtimes', 'node', '-f', 'bestaudio/best', '-o', '-', `https://www.youtube.com/watch?v=${id}`], {stdio: ['ignore', 'pipe', 'pipe']});
+    const downloader = spawn('yt-dlp', ['--no-playlist', '--no-warnings', '--force-ipv4', '--socket-timeout', '20', '--retries', '2', '--fragment-retries', '2', '--js-runtimes', 'deno', '-f', 'bestaudio/best', '-o', '-', `https://www.youtube.com/watch?v=${id}`], {stdio: ['ignore', 'pipe', 'pipe']});
     const decoder = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-t', '60', '-vn', '-ac', '1', '-ar', '22050', '-f', 'f32le', 'pipe:1'], {stdio: ['pipe', 'pipe', 'pipe']});
     let chunks = [], total = 0, errors = '';
+    let settled = false;
+    const timer = setTimeout(() => finish(new Error('Audio extraction timed out')), 120000);
     downloader.stdout.pipe(decoder.stdin);
     decoder.stdin.on('error', () => {});
     decoder.stdout.on('data', chunk => { total += chunk.length; if (total <= 8 * 1024 * 1024) chunks.push(chunk); });
     downloader.stderr.on('data', chunk => { errors += chunk.toString(); });
     decoder.stderr.on('data', chunk => { errors += chunk.toString(); });
-    const fail = (error) => { downloader.kill('SIGKILL'); decoder.kill('SIGKILL'); reject(error); };
-    downloader.on('error', fail); decoder.on('error', fail);
+    const finish = (error, result) => { if (settled) return; settled = true; clearTimeout(timer); downloader.kill('SIGKILL'); decoder.kill('SIGKILL'); error ? reject(error) : resolve(result); };
+    downloader.on('error', error => finish(error)); decoder.on('error', error => finish(error));
     decoder.on('close', code => {
-      if (code !== 0 || !chunks.length) return reject(new Error(errors.trim() || 'Could not decode audio'));
-      resolve(analyzePCM(Buffer.concat(chunks, Math.min(total, 8 * 1024 * 1024)), 22050));
+      if (code !== 0 || !chunks.length) return finish(new Error(errors.trim() || 'Could not decode audio'));
+      finish(null, analyzePCM(Buffer.concat(chunks, Math.min(total, 8 * 1024 * 1024)), 22050));
     });
     downloader.on('close', code => { if (code !== 0) decoder.stdin.destroy(); });
   });
@@ -68,8 +75,19 @@ function serveFile(req, res) {
 
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/analyze') {
-    let body = ''; req.on('data', chunk => { body += chunk; if (body.length > MAX_BODY) req.destroy(); });
-    req.on('end', async () => { try { const id = youtubeId(JSON.parse(body).url || ''); if (!id) return json(res, 400, {error:'Please provide a valid YouTube URL.'}); const result = await runAnalysis(id); return json(res, 200, result); } catch (error) { console.error(`[analyze] ${error.message}`); return json(res, 502, {error:'Could not read that video’s audio. Check that it is public and playable, then try again.'}); } }); return;
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').toString().split(',')[0].trim();
+    const now = Date.now(), recent = (recentRequests.get(ip) || []).filter(timestamp => now - timestamp < RATE_WINDOW_MS);
+    if (recent.length >= RATE_LIMIT) return json(res, 429, {error:'Too many requests. Please try again in a few minutes.'});
+    recent.push(now); recentRequests.set(ip, recent);
+    let body = '', tooLarge = false; req.on('data', chunk => { body += chunk; if (body.length > MAX_BODY) tooLarge = true; });
+    req.on('end', async () => {
+      if (tooLarge) return json(res, 413, {error:'Request is too large.'});
+      let payload; try { payload = JSON.parse(body); } catch (_) { return json(res, 400, {error:'Invalid request.'}); }
+      const id = youtubeId(payload.url || ''); if (!id) return json(res, 400, {error:'Please provide a valid YouTube URL.'});
+      if (activeJobs >= MAX_CONCURRENT_JOBS) return json(res, 429, {error:'The analyzer is busy. Please try again in a moment.'});
+      activeJobs++;
+      try { const result = await runAnalysis(id); return json(res, 200, result); } catch (error) { console.error(`[analyze:${id}] ${error.message}`); return json(res, 502, {error:'Could not read that video’s audio. Check that it is public and playable, then try again.'}); } finally { activeJobs--; }
+    }); return;
   }
   if (req.method === 'GET' || req.method === 'HEAD') return serveFile(req, res);
   json(res, 405, {error:'Method not allowed'});
